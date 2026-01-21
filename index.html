@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hypernova Website</title>
+
+<style>
+body {
+  background:#0b0b0f;
+  color:#eaeaea;
+  font-family:monospace;
+  display:flex;
+  justify-content:center;
+  padding-top:40px;
+}
+
+#lock, #chat {
+  width:600px;
+  text-align:center;
+}
+
+input, textarea {
+  width:100%;
+  padding:12px;
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+}
+
+button {
+  margin-top:10px;
+  padding:8px 22px;
+  background:#6cffd8;
+  border:none;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+#messages {
+  max-height:420px;
+  overflow-y:auto;
+  text-align:left;
+  margin-bottom:12px;
+}
+
+.bubble {
+  padding:10px 14px;
+  margin:8px 0;
+  border-radius:12px;
+  white-space:pre-wrap;
+}
+
+.user { background:#2a2a2f; text-align:right; }
+.ai { background:#142222; }
+
+.help {
+  margin-top:14px;
+  font-size:13px;
+  color:#888;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔒 LOCK SCREEN -->
+<div id="lock">
+  <h1>Hypernova Website</h1>
+  <p>Internal creative system</p>
+
+  <input id="pw" type="password" placeholder="Type password">
+  <button onclick="unlock()">Enter</button>
+
+  <p class="help">
+    Don’t know the password?<br>
+    Message <b>77195239</b> on WhatsApp
+  </p>
+</div>
+
+<!-- 🤖 AI CHAT -->
+<div id="chat" style="display:none;">
+  <div id="messages"></div>
+  <textarea id="input" placeholder="Type anything…"></textarea>
+</div>
+
+<script>
+const lock = document.getElementById("lock");
+const chat = document.getElementById("chat");
+const input = document.getElementById("input");
+const messages = document.getElementById("messages");
+
+/* ⏎ ENTER = SEND (SHIFT+ENTER = NEW LINE) */
+input?.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+
+/* 🔐 ASK SERVER IF PASSWORD IS CORRECT */
+async function unlock() {
+  const r = await fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pw.value })
+  });
+
+  if (r.ok) {
+    lock.style.display = "none";
+    chat.style.display = "block";
+    input.focus();
+  } else {
+    alert("Wrong password");
+  }
+}
+
+/* 💬 CHAT */
+function addBubble(text, who) {
+  const div = document.createElement("div");
+  div.className = "bubble " + who;
+  div.textContent = text;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+
+  addBubble(text, "user");
+  input.value = "";
+
+  addBubble("thinking…", "ai");
+  const aiBubble = messages.lastChild;
+
+  const r = await fetch("/ai", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-auth": "ok"
+    },
+    body: JSON.stringify({ text })
+  });
+
+  const d = await r.json();
+  aiBubble.textContent = d.reply;
+}
+</script>
+
+</body>
+</html>
